@@ -22,21 +22,26 @@
 
 class RobotController {
 public:
-    RobotController(std::string arm_id, int bin);
+    RobotController(std::string arm_id);
     ~RobotController();
     bool Planner();
     void Execute();
     void GoToTarget(std::initializer_list<geometry_msgs::Pose> list);
     void GoToTarget(const geometry_msgs::Pose& pose);
-    void SendRobotHome(int bin);
+    void SendRobotHome(std::string pose);
+    void SendRobotExch(std::string arm, double buffer);
     bool DropPart(geometry_msgs::Pose pose, bool change_orient);
+    bool DropPart(geometry_msgs::Pose pose, bool change_orient, geometry_msgs::Pose part_pose);
     void GripperToggle(const bool& state);
     void GripperCallback(const osrf_gear::VacuumGripperState::ConstPtr& grip);
     void GripperStateCheck(geometry_msgs::Pose pose);
     bool PickPart(geometry_msgs::Pose& part_pose);
     bool PickPartFromConv(geometry_msgs::Pose& part_pose);
+    void ChangeOrientation(geometry_msgs::Quaternion orientation,geometry_msgs::Quaternion orientation_part);
 
-    void ChangeOrientation(geometry_msgs::Quaternion orientation);
+    bool GetGripperState(){
+        return gripper_state_;
+    }
 
 private:
     ros::NodeHandle robot_controller_nh_;
@@ -59,10 +64,18 @@ private:
     osrf_gear::VacuumGripperState gripper_status_;
 
     std::string object;
+    std::string arm_id_;
     bool plan_success_;
     std::vector<double> home_joint_pose_conv_;
     std::vector<double> home_joint_pose_bin_;
     std::vector<double> home_joint_pose_kit1_;
+    std::vector<double> home_joint_pose_kit2_;
+    std::vector<double> home_arm_1_pose_;
+    std::vector<double> home_arm_2_pose_;
+    std::vector<double> part_flip_arm_1_pose_;
+    std::vector<double> part_flip_arm_2_pose_;
+    std::vector<double> part_exch_arm_1_pose_;
+    std::vector<double> part_exch_arm_2_pose_;
     std::vector<std::string> joint_names_;
     geometry_msgs::Pose home_cart_pose_;
     geometry_msgs::Quaternion fixed_orientation_;

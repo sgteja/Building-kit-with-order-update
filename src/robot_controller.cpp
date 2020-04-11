@@ -8,19 +8,21 @@
  * Class attributes are initialized in the constructor init list
  * You can instantiate another robot by passing the correct parameter to the constructor
  */
-RobotController::RobotController(std::string arm_id, int bin) :
+RobotController::RobotController(std::string arm_id) :
 robot_controller_nh_("/ariac/"+arm_id),
 robot_controller_options("manipulator",
         "/ariac/"+arm_id+"/robot_description",
         robot_controller_nh_),
-robot_move_group_(robot_controller_options) {
+robot_move_group_(robot_controller_options) 
+{   
+    arm_id_ = arm_id;
     ROS_WARN(">>>>> RobotController");
 
-    robot_move_group_.setPlanningTime(10);
-    robot_move_group_.setNumPlanningAttempts(3);
-    robot_move_group_.setPlannerId("TRRTkConfigDefault");
-    robot_move_group_.setMaxVelocityScalingFactor(0.7);
-    robot_move_group_.setMaxAccelerationScalingFactor(0.7);
+    robot_move_group_.setPlanningTime(20);
+    robot_move_group_.setNumPlanningAttempts(10);
+    robot_move_group_.setPlannerId("RRTConnectkConfigDefault");
+    robot_move_group_.setMaxVelocityScalingFactor(0.9);
+    robot_move_group_.setMaxAccelerationScalingFactor(0.9);
     // robot_move_group_.setEndEffector("moveit_ee");
     robot_move_group_.allowReplanning(true);
 
@@ -29,15 +31,40 @@ robot_move_group_(robot_controller_options) {
     // 'elbow_joint', 'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
 
     //--These are joint positions used for the home position to pick from bin
-    home_joint_pose_bin_ = {0.0, 3.1, -1.1, 1.9, 3.9, 4.7, 0};
+    // if (arm_id == "arm1"){
+    //     home_joint_pose_bin_ = {0.0, 3.14, -1.26, 2.39, 3.52, 4.7, 0};
+    // }
+    // else {
+
+    //     home_joint_pose_bin_ = {0.0, 3.14, -1.26, 2.51, 3.40, -1.60, 0};
+    // }
+    home_joint_pose_bin_ = {0.0, 3.14, -1.26, 2.51, 3.40, -1.60, 0};
 
     //-- The joint positions for the home position to pick from the conveyer belt
-    home_joint_pose_conv_ = {0, 3.27, -2.38, -1.76, -0.57, -4.70, 0};
+    home_joint_pose_conv_ = {0.0, 3.1, -1.1, 1.9, 3.9, 4.7, 0};
+    // if (arm_id == "arm1"){
+    //     home_joint_pose_conv_ = {0.0, 3.1, -1.1, 1.9, 3.9, 4.7, 0};   
+    // }
+    // else {
+    //     home_joint_pose_conv_ = {0, 3.27, -2.38, -1.76, -0.57, -4.70, 0};
+    // }
 
     joint_names_ = {"linear_arm_actuator_joint",  "shoulder_pan_joint", "shoulder_lift_joint", 
     "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"};
-    home_joint_pose_kit1_ = {1.16, 1.51, -1.26, 1.88, 4.02, -1.51, -2.03};
+    home_joint_pose_kit1_ = {1.18, 1.51, -1.26, 1.88, 4.02, -1.51, -2.03};
+    
+    home_joint_pose_kit2_ = {-1.18, 1.51, -1.26, 1.88, 4.02, -1.51, -2.03};
 
+
+    home_arm_1_pose_ = {1.18, 0, -1.51, 0, 2.89, -1.51, 0};
+
+    home_arm_2_pose_ = {-1.18, -3.02, -1.51, 0, 3.28, -1.51, 0};
+
+    part_flip_arm_1_pose_ = {-0.7, 4.65, -2.39, 2.14, 3.39, -1.51, 0};
+    part_flip_arm_2_pose_ = {0.7, -1.63, -0.75, -2.14, 6.00, 1.75,0};
+
+    part_exch_arm_1_pose_ = {0.1, 1.76, -1.76, -2.01, -0.95, 1.5, 0};
+    part_exch_arm_2_pose_ = {-0.1, 1.38, -1.51, 2.2, 4, -1.63, 0};    
 
     //-- offset used for picking up parts
     //-- For the pulley_part, the offset is different since the pulley is thicker
@@ -45,19 +72,12 @@ robot_move_group_(robot_controller_options) {
 
     //--topic used to get the status of the gripper
     gripper_subscriber_ = gripper_nh_.subscribe(
-            "/ariac/arm1/gripper/state", 10, &RobotController::GripperCallback, this);
+            "/ariac/"+arm_id+"/gripper/state", 10, &RobotController::GripperCallback, this);
 
-    // SendRobotHome(bin);
-
-    if (bin==1) {
-        end_position_ = home_joint_pose_bin_;
-    }
-    else {
-        end_position_ = home_joint_pose_conv_;
-    }
+    // SendRobotHome(arm_id);
 
     gripper_client_ = robot_controller_nh_.serviceClient<osrf_gear::VacuumGripperControl>(
-            "/ariac/arm1/gripper/control");
+            "/ariac/"+arm_id+"/gripper/control");
     drop_flag_ = false;
 }
 
@@ -91,17 +111,20 @@ void RobotController::Execute() {
     }
 }
 
-void RobotController::ChangeOrientation(geometry_msgs::Quaternion orientation){
+void RobotController::ChangeOrientation(geometry_msgs::Quaternion orientation_target, geometry_msgs::Quaternion orientation_part){
 
     ros::AsyncSpinner spinner(4);
     spinner.start();
     std::vector<double> joint_values = robot_move_group_.getCurrentJointValues();
     tf::Quaternion Q;
-    double roll, pitch, yaw;
-    tf::quaternionMsgToTF(orientation,Q);
-    tf::Matrix3x3(Q).getRPY(roll,pitch,yaw);
+    double roll, pitch, yaw_target, yaw_part;
+    tf::quaternionMsgToTF(orientation_target,Q);
+    tf::Matrix3x3(Q).getRPY(roll,pitch,yaw_target);
+    tf::quaternionMsgToTF(orientation_part, Q);
+    tf::Matrix3x3(Q).getRPY(roll,pitch,yaw_part);
+    double yaw = yaw_target - yaw_part;
     ROS_INFO_STREAM(">>>>> Rotation :"<< yaw);
-    joint_values[6] += yaw;
+    joint_values[6] = yaw;
 
     robot_move_group_.setJointValueTarget(joint_values);
     
@@ -112,9 +135,9 @@ void RobotController::ChangeOrientation(geometry_msgs::Quaternion orientation){
 
     // ros::Duration(2.0).sleep();
 
-    robot_tf_listener_.waitForTransform("arm1_linear_arm_actuator", "arm1_ee_link",
+    robot_tf_listener_.waitForTransform(""+arm_id_+"_linear_arm_actuator", ""+arm_id_+"_ee_link",
                                             ros::Time(0), ros::Duration(10));
-    robot_tf_listener_.lookupTransform("/arm1_linear_arm_actuator", "/arm1_ee_link",
+    robot_tf_listener_.lookupTransform("/"+arm_id_+"_linear_arm_actuator", "/"+arm_id_+"_ee_link",
                                            ros::Time(0), robot_tf_transform_);
 
 
@@ -171,20 +194,62 @@ void RobotController::GoToTarget(
     ros::Duration(0.5).sleep();
 }
 
-void RobotController::SendRobotHome(int bin) {
-    if (bin==1) {
+void RobotController::SendRobotExch(std::string arm, double buffer){
+    
+    std::vector<double> temp_pose;
+    if (arm=="arm1"){
+        temp_pose = part_flip_arm_1_pose_;
+        temp_pose[0] -= buffer;
+    }
+    else{
+        temp_pose = part_flip_arm_2_pose_;
+        temp_pose[0] -= buffer;
+    }
+    robot_move_group_.setJointValueTarget(temp_pose); 
+    ros::AsyncSpinner spinner(4);
+    spinner.start();
+    if (this->Planner()) {
+        robot_move_group_.move();
+        ros::Duration(1.5).sleep();
+    }
+
+
+}
+
+void RobotController::SendRobotHome(std::string pose) {
+    if (pose=="bin") {
         robot_move_group_.setJointValueTarget(home_joint_pose_bin_);
     }
-    else if (bin==2){
+    else if (pose=="kit1"){
         unsigned int i = 0;
         for (const auto &joint_name: joint_names_){
             robot_move_group_.setJointValueTarget(joint_name, home_joint_pose_kit1_[i]);
             i++;
         }
     }
-    else {
+    else if (pose=="kit2"){
+        unsigned int i = 0;
+        for (const auto &joint_name: joint_names_){
+            robot_move_group_.setJointValueTarget(joint_name, home_joint_pose_kit2_[i]);
+            i++;
+        }
+    }
+    else if (pose=="conv"){
         robot_move_group_.setJointValueTarget(home_joint_pose_conv_);
     }
+    else if (pose=="arm1"){
+        robot_move_group_.setJointValueTarget(home_arm_1_pose_);
+    }
+    else if (pose=="arm2"){
+        robot_move_group_.setJointValueTarget(home_arm_2_pose_);
+    }
+    else if (pose=="arm1_exch"){
+        robot_move_group_.setJointValueTarget(part_exch_arm_1_pose_);
+    }
+    else if (pose=="arm2_exch"){
+        robot_move_group_.setJointValueTarget(part_exch_arm_2_pose_);
+    }
+
     ros::AsyncSpinner spinner(4);
     spinner.start();
     if (this->Planner()) {
@@ -194,9 +259,9 @@ void RobotController::SendRobotHome(int bin) {
 
     // ros::Duration(2.0).sleep();
 
-    robot_tf_listener_.waitForTransform("arm1_linear_arm_actuator", "arm1_ee_link",
+    robot_tf_listener_.waitForTransform(""+arm_id_+"_linear_arm_actuator", ""+arm_id_+"_ee_link",
                                             ros::Time(0), ros::Duration(10));
-    robot_tf_listener_.lookupTransform("/arm1_linear_arm_actuator", "/arm1_ee_link",
+    robot_tf_listener_.lookupTransform("/"+arm_id_+"_linear_arm_actuator", "/"+arm_id_+"_ee_link",
                                            ros::Time(0), robot_tf_transform_);
 
 
@@ -222,6 +287,36 @@ void RobotController::GripperToggle(const bool& state) {
     }
 }
 
+bool RobotController::DropPart(geometry_msgs::Pose part_pose, bool change_orient, geometry_msgs::Pose pick_pose) {
+
+    drop_flag_ = true;
+
+    ros::spinOnce();
+    ROS_INFO_STREAM("Placing phase activated...");
+
+    if (gripper_state_){
+        ROS_INFO_STREAM("Moving towards AGV1...");
+
+       auto temp_pose = part_pose;
+       // temp_pose.position.z += 0.5;
+       temp_pose.position.z += 0.1;
+       this->GoToTarget({temp_pose, part_pose});
+       ros::Duration(2).sleep();
+       ros::spinOnce();
+       if (change_orient){
+            ChangeOrientation(part_pose.orientation, pick_pose.orientation);
+       }
+       
+        ROS_INFO_STREAM("Actuating the gripper...");
+        this->GripperToggle(false);
+    
+
+    }
+
+    drop_flag_ = false;
+    return gripper_state_;
+}
+
 bool RobotController::DropPart(geometry_msgs::Pose part_pose, bool change_orient) {
 
     drop_flag_ = true;
@@ -233,14 +328,11 @@ bool RobotController::DropPart(geometry_msgs::Pose part_pose, bool change_orient
         ROS_INFO_STREAM("Moving towards AGV1...");
 
        auto temp_pose = part_pose;
-       temp_pose.position.z += 0.5;
+       // temp_pose.position.z += 0.5;
+       temp_pose.position.z += 0.1;
        this->GoToTarget({temp_pose, part_pose});
        ros::Duration(2).sleep();
        ros::spinOnce();
-       if (change_orient){
-            ChangeOrientation(part_pose.orientation);
-       }
-       
         ROS_INFO_STREAM("Actuating the gripper...");
         this->GripperToggle(false);
     
@@ -263,7 +355,9 @@ bool RobotController::PickPart(geometry_msgs::Pose& part_pose) {
     ROS_INFO_STREAM("Moving to part...");
     part_pose.position.z = part_pose.position.z + offset_;
     auto temp_pose_1 = part_pose;
-    temp_pose_1.position.z += 0.3;
+    // temp_pose_1.position.z += 0.3;
+    temp_pose_1.position.z += 0.15;
+
 
     this->GoToTarget({temp_pose_1, part_pose});
 

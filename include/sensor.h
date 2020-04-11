@@ -27,6 +27,9 @@ public:
     void LogicalCamera2Callback(const osrf_gear::LogicalCameraImage::ConstPtr &);
     void LogicalCamera3Callback(const osrf_gear::LogicalCameraImage::ConstPtr &);
     void LogicalCamera4Callback(const osrf_gear::LogicalCameraImage::ConstPtr &);
+    void LogicalCamera5Callback(const osrf_gear::LogicalCameraImage::ConstPtr &);
+    void LogicalCamera6Callback(const osrf_gear::LogicalCameraImage::ConstPtr &);
+    void LogicalCamera7Callback(const osrf_gear::LogicalCameraImage::ConstPtr &);
     void QualitySensor1Callback(const osrf_gear::LogicalCameraImage::ConstPtr &);
     void QualitySensor2Callback(const osrf_gear::LogicalCameraImage::ConstPtr &);
 
@@ -79,6 +82,9 @@ private:
     ros::Subscriber camera_2_subscriber_;
     ros::Subscriber camera_3_subscriber_;
     ros::Subscriber camera_4_subscriber_;
+    ros::Subscriber camera_5_subscriber_;
+    ros::Subscriber camera_6_subscriber_;
+    ros::Subscriber camera_7_subscriber_;
     ros::Subscriber break_beam_1_subscriber_;
     ros::Subscriber break_beam_2_subscriber_;
     ros::Subscriber quality_sensor_1_subscriber_;
@@ -93,6 +99,9 @@ private:
     osrf_gear::LogicalCameraImage current_parts_2_;
     osrf_gear::LogicalCameraImage current_parts_3_;
     osrf_gear::LogicalCameraImage current_parts_4_;
+    osrf_gear::LogicalCameraImage current_parts_5_;
+    osrf_gear::LogicalCameraImage current_parts_6_;
+    osrf_gear::LogicalCameraImage current_parts_7_;
     osrf_gear::LogicalCameraImage quality_parts_1_;
     osrf_gear::LogicalCameraImage quality_parts_2_;
     std::map<std::string, std::vector<geometry_msgs::Pose>> part_list_;
@@ -103,7 +112,7 @@ private:
     
     std::vector<geometry_msgs::Pose> part_list_faulty_;
 
-    bool init_, cam_1_, cam_2_,cam_3_, cam_4_, break_beam_1_, break_beam_2_;
-    int camera1_frame_counter_, camera2_frame_counter_, camera3_frame_counter_, camera4_frame_counter_,
-        break_beam_1_trig_counter_, break_beam_2_trig_counter_, faulty_parts_1_num_, faulty_parts_2_num_;
+    bool init_, cam_1_, cam_2_,cam_3_, cam_4_, cam_5_, cam_6_, cam_7_, break_beam_1_, break_beam_2_;
+    int camera1_frame_counter_, camera2_frame_counter_, camera3_frame_counter_, camera4_frame_counter_, camera5_frame_counter_,
+        camera6_frame_counter_, camera7_frame_counter_, break_beam_1_trig_counter_, break_beam_2_trig_counter_, faulty_parts_1_num_, faulty_parts_2_num_;
 };
