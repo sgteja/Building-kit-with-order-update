@@ -12,6 +12,7 @@
 - Faulty parts are present.
 - Run in competition node.
 
+Link to the video --> https://drive.google.com/file/d/1bk2GMNkzV6QrmXuns-CckHblneAR-HmR/view?usp=sharing
 
 
 
