@@ -105,7 +105,7 @@ geometry_msgs::Pose AriacOrderManager::PickUp(std::string product_type, std::str
             arm2_.SendRobotHome("bin");
             rackDrop.position.z = 0.955;
             
-            double r=0, p=0, y=3.14/2.0;
+            double r=0, p=0, y=-1.0;
             tf2::Quaternion q_rot, q_new, q_old;
             q_rot.setRPY(r,p,y);
             q_old[0] = part_pose.orientation.x;
@@ -148,6 +148,19 @@ geometry_msgs::Pose AriacOrderManager::PickUp(std::string product_type, std::str
             bool drop = arm1_.DropPart(rackDrop,false);
             arm1_.SendRobotHome("bin");
             rackDrop.position.z = 0.955;
+            double r=0, p=0, y=-1.0;
+            tf2::Quaternion q_rot, q_new, q_old;
+            q_rot.setRPY(r,p,y);
+            q_old[0] = part_pose.orientation.x;
+            q_old[1] = part_pose.orientation.y;
+            q_old[2] = part_pose.orientation.z;
+            q_old[3] = part_pose.orientation.w;
+            q_new = q_rot * q_old;
+            q_new.normalize();
+            rackDrop.orientation.x = q_new[0];
+            rackDrop.orientation.y = q_new[1];
+            rackDrop.orientation.z = q_new[2];
+            rackDrop.orientation.w = q_new[3];
             rackDrop.orientation = part_pose.orientation;
             failed_pick = arm2_.PickPart(rackDrop);
             while(!failed_pick){
@@ -180,7 +193,7 @@ std::string AriacOrderManager::PickAndPlace(const std::pair<std::string,geometry
     
     auto part_pose = camera_.GetPartPose("/world",product_frame);
 
-    this->PickUp(product_type, product_frame, agv_id);
+    part_pose = this->PickUp(product_type, product_frame, agv_id);
     
 
     
