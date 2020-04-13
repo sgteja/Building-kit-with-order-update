@@ -51,9 +51,9 @@ robot_move_group_(robot_controller_options)
 
     joint_names_ = {"linear_arm_actuator_joint",  "shoulder_pan_joint", "shoulder_lift_joint", 
     "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"};
-    home_joint_pose_kit1_ = {1.18, 1.51, -1.26, 1.88, 4.02, -1.51, -2.03};
+    home_joint_pose_kit1_ = {1.18, 1.51, -1.26, 1.88, 4.02, -1.51, 0};
     
-    home_joint_pose_kit2_ = {-1.18, 1.51, -1.26, 1.88, 4.02, -1.51, -2.03};
+    home_joint_pose_kit2_ = {-1.18, 4.52, -1.13, 2.26, 3.6, -1.51, 0};
 
 
     home_arm_1_pose_ = {1.18, 0, -1.51, 0, 2.89, -1.51, 0};
@@ -109,31 +109,44 @@ void RobotController::Execute() {
         robot_move_group_.move();
         ros::Duration(1.0).sleep();
     }
+    spinner.stop();
 }
 
 void RobotController::ChangeOrientation(geometry_msgs::Quaternion orientation_target, geometry_msgs::Quaternion orientation_part){
 
-    ros::AsyncSpinner spinner(4);
-    spinner.start();
-    std::vector<double> joint_values = robot_move_group_.getCurrentJointValues();
+    
     tf::Quaternion Q;
-    double roll, pitch, yaw_target, yaw_part;
+    double roll, pitch, yaw_target, yaw_part,yaw{0};
     tf::quaternionMsgToTF(orientation_target,Q);
     tf::Matrix3x3(Q).getRPY(roll,pitch,yaw_target);
     tf::quaternionMsgToTF(orientation_part, Q);
     tf::Matrix3x3(Q).getRPY(roll,pitch,yaw_part);
-    double yaw = yaw_target - yaw_part;
-    ROS_INFO_STREAM(">>>>> Rotation :"<< yaw);
-    joint_values[6] = yaw;
+    if (arm_id_=="arm1"){
+        yaw = (yaw_target - yaw_part);
+        ROS_INFO_STREAM(">>>>> Rotation :"<< yaw);
 
-    robot_move_group_.setJointValueTarget(joint_values);
-    
+    }
+    else{
+        yaw = (yaw_target - yaw_part)+1.57;
+    }
+
+    ros::AsyncSpinner spinner(4);
+    spinner.start();
+    // while(!robot_move_group_.startStateMonitor()){
+    //     ROS_INFO_STREAM("Waiting for current robot state");
+    //     ros::spinOnce();        
+    // }
+    // std::vector<double> joint_values = robot_move_group_.getCurrentJointValues();
+    // ROS_INFO_STREAM("Received joint values--->"<<joint_values[0]);
+    // joint_values[6] = yaw;
+    ROS_INFO_STREAM("Adjusting the orientation");
+    robot_move_group_.setJointValueTarget("wrist_3_joint",yaw);
     if (this->Planner()) {
         robot_move_group_.move();
         ros::Duration(1.5).sleep();
     }
 
-    // ros::Duration(2.0).sleep();
+    spinner.stop();
 
     robot_tf_listener_.waitForTransform(""+arm_id_+"_linear_arm_actuator", ""+arm_id_+"_ee_link",
                                             ros::Time(0), ros::Duration(10));
@@ -164,10 +177,10 @@ void RobotController::GoToTarget(const geometry_msgs::Pose& pose) {
         ros::Duration(0.5).sleep();
     }
     ROS_INFO_STREAM("Point reached...");
+    spinner.stop();
 }
 
-void RobotController::GoToTarget(
-        std::initializer_list<geometry_msgs::Pose> list) {
+void RobotController::GoToTarget(std::initializer_list<geometry_msgs::Pose> list) {
     ros::AsyncSpinner spinner(4);
     spinner.start();
 
@@ -192,6 +205,7 @@ void RobotController::GoToTarget(
 
     robot_move_group_.execute(robot_planner_);
     ros::Duration(0.5).sleep();
+    spinner.stop();
 }
 
 void RobotController::SendRobotExch(std::string arm, double buffer){
@@ -213,7 +227,7 @@ void RobotController::SendRobotExch(std::string arm, double buffer){
         ros::Duration(1.5).sleep();
     }
 
-
+    spinner.stop();
 }
 
 void RobotController::SendRobotHome(std::string pose) {
@@ -257,6 +271,7 @@ void RobotController::SendRobotHome(std::string pose) {
         ros::Duration(1.5).sleep();
     }
 
+    spinner.stop();
     // ros::Duration(2.0).sleep();
 
     robot_tf_listener_.waitForTransform(""+arm_id_+"_linear_arm_actuator", ""+arm_id_+"_ee_link",
@@ -295,21 +310,20 @@ bool RobotController::DropPart(geometry_msgs::Pose part_pose, bool change_orient
     ROS_INFO_STREAM("Placing phase activated...");
 
     if (gripper_state_){
-        ROS_INFO_STREAM("Moving towards AGV1...");
-
-       auto temp_pose = part_pose;
-       // temp_pose.position.z += 0.5;
-       temp_pose.position.z += 0.1;
-       this->GoToTarget({temp_pose, part_pose});
-       ros::Duration(2).sleep();
-       ros::spinOnce();
-       if (change_orient){
+        ROS_INFO_STREAM("Moving towards AGV"+arm_id_+"...");
+        if (change_orient){
             ChangeOrientation(part_pose.orientation, pick_pose.orientation);
        }
-       
+        auto temp_pose = part_pose;
+        // temp_pose.position.z += 0.5;
+        temp_pose.position.z += 0.1;
+        this->GoToTarget({temp_pose, part_pose});
+        ros::Duration(2).sleep();
+        ros::spinOnce();
+
         ROS_INFO_STREAM("Actuating the gripper...");
         this->GripperToggle(false);
-    
+   
 
     }
 

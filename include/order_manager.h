@@ -29,7 +29,7 @@ public:
     std::string PickAndPlace(std::pair<std::string,geometry_msgs::Pose> object_prop,int agvnum);
     bool PickAndPlaceFromConv(std::pair<std::string,geometry_msgs::Pose> object_prop,int agvnum);
     void SubmitAGV(int num, std::string shipmentID);
-    bool RemoveFailureParts(std::string product_part_frame, int sensor_num, std::string product_type);
+    bool RemoveFailureParts(int sensor_num, std::string product_type);
     geometry_msgs::Pose PickUp(std::string product_type, std::string product_frame, int agv_id);
     bool CheckOrderUpdate(int current_order_count, std::string orderID);
     void ClearTray(int agv_id);

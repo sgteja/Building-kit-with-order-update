@@ -148,7 +148,8 @@ geometry_msgs::Pose AriacOrderManager::PickUp(std::string product_type, std::str
             bool drop = arm1_.DropPart(rackDrop,false);
             arm1_.SendRobotHome("bin");
             rackDrop.position.z = 0.955;
-            double r=0, p=0, y=-1.0;
+           
+            double r=0, p=0, y=1.57;
             tf2::Quaternion q_rot, q_new, q_old;
             q_rot.setRPY(r,p,y);
             q_old[0] = part_pose.orientation.x;
@@ -161,7 +162,7 @@ geometry_msgs::Pose AriacOrderManager::PickUp(std::string product_type, std::str
             rackDrop.orientation.y = q_new[1];
             rackDrop.orientation.z = q_new[2];
             rackDrop.orientation.w = q_new[3];
-            rackDrop.orientation = part_pose.orientation;
+            
             failed_pick = arm2_.PickPart(rackDrop);
             while(!failed_pick){
                 failed_pick = arm2_.PickPart(rackDrop);
@@ -396,6 +397,7 @@ void AriacOrderManager::ClearTray(int agv_id){
                 failed_pick = arm1_.PickPart(part_pose);
             }
             part_pose.position.z += 0.3;
+            part_pose.position.x -= 0.1;
             part_pose.position.y -= 0.8;
             bool result;
             result = arm1_.DropPart(part_pose, false);
@@ -419,7 +421,8 @@ void AriacOrderManager::ClearTray(int agv_id){
                 failed_pick = arm2_.PickPart(part_pose);
             }
             part_pose.position.z += 0.3;
-            part_pose.position.y -= 0.8;
+            part_pose.position.y += 0.8;
+            part_pose.position.x -= 0.1;
             bool result;
             result = arm2_.DropPart(part_pose, false);
             parts_list_kit_2_.pop_back();
@@ -482,7 +485,7 @@ void AriacOrderManager::ExecuteOrder() {
                     std::string picked_part_frame =  PickAndPlace(bin_part, agv_id);
                     ros::Duration(1).sleep();
                     ros::spinOnce();
-                    result = RemoveFailureParts(picked_part_frame, agv_id, bin_part.first);
+                    result = RemoveFailureParts(agv_id, bin_part.first);
                 }
                 if (CheckOrderUpdate(current_order_count, order_id)){
                     ROS_WARN_STREAM(">>>>>>>>Order Update is triggered<<<<<<<<<");
@@ -500,8 +503,10 @@ void AriacOrderManager::ExecuteOrder() {
             }
 
             //-- Check for order update
-            ros::Duration(10).sleep();
-            ros::spinOnce();
+            if (!CheckOrderUpdate(current_order_count, order_id)){
+                ros::Duration(6).sleep();
+                ros::spinOnce();
+            }
             if (CheckOrderUpdate(current_order_count, order_id)){
                 ROS_WARN_STREAM(">>>>>>>>Order Update is triggered<<<<<<<<<");
                 if(agv_id==1){
@@ -532,10 +537,18 @@ void AriacOrderManager::ExecuteOrder() {
     }
 }
 
-bool AriacOrderManager::RemoveFailureParts(std::string product_part_frame, int sensor_num, std::string product_type){
+bool AriacOrderManager::RemoveFailureParts(int sensor_num, std::string product_type){
 
     if (camera_.get_faulty_parts_num(sensor_num)>0){
-        
+        std::string product_part_frame;
+        if(sensor_num==1){
+            product_part_frame = parts_list_kit_1_.back();
+            parts_list_kit_1_.pop_back();
+        }
+        else{
+            product_part_frame = parts_list_kit_2_.back();
+            parts_list_kit_2_.pop_back();
+        }
         std::string delimiter = "_";
         unsigned int pos = 0;
         unsigned int count = 0;
@@ -578,14 +591,20 @@ bool AriacOrderManager::RemoveFailureParts(std::string product_part_frame, int s
             }
         }
 
-        part_pose.position.z += 0.3;
-        part_pose.position.y -= 0.8;
+        
 
         bool result;
         if (sensor_num==1){
+            part_pose.position.z += 0.3;
+            part_pose.position.x -= 0.1;
+            part_pose.position.y -= 0.8;
             result = arm1_.DropPart(part_pose, false);
+
         }
         else{
+            part_pose.position.z += 0.3;
+            part_pose.position.x -= 0.1;
+            part_pose.position.y += 0.8;
             result = arm2_.DropPart(part_pose, false);
         }
 
