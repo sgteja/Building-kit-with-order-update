@@ -18,13 +18,13 @@ Link to the video --> https://drive.google.com/file/d/1bk2GMNkzV6QrmXuns-CckHbln
 
 ## Running the package:
 
-- Unpack the zip file "group3_rwa4.zip" into "group3_rwa4" folder into the workspace src directory.
+- Unpack the zip file "group3_rwa5.zip" into "group3_rwa5" folder into the workspace src directory.
 - Open two terminals.
 - In terminal-1:
 ```
 source /opt/ros/melodic/setup.bash
 source ~/catkin_ws/devel/setup.bash (Hoping the folder is in home directory)
-roslaunch group3_rwa4 group3_rwa4.launch
+roslaunch group3_rwa5 group3_rwa5.launch
 ```
 - In terminal-2:
 ```
@@ -35,9 +35,9 @@ roslaunch ur10_moveit_config move_group.launch arm_namespace:=/ariac/arm1
 - In terminal-3:
 ```
 source /opt/ros/melodic/setup.bash
-catkin_make --only-pkg-with-deps group3_rwa4
+catkin_make --only-pkg-with-deps group3_rwa5
 source ~/catkin_ws/devel/setup.bash (Hoping the folder is in home directory)
-rosrun group3_rwa4 ariac_example_node
+rosrun group3_rwa5 ariac_example_node
 ```
 
 	
