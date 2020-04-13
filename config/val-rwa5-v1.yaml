@@ -111,5 +111,6 @@ models_over_bins:
         num_models_y: 3
 
 faulty_products:
+  - piston_rod_part_9
   - gear_part_12
   - disk_part_6

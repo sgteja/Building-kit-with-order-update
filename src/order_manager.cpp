@@ -553,11 +553,15 @@ bool AriacOrderManager::RemoveFailureParts(int sensor_num, std::string product_t
         unsigned int pos = 0;
         unsigned int count = 0;
         std::string token;
+        int indexNum = 6;
+        if (product_type == "piston_rod_part"){
+            indexNum++;
+        }
         while ((pos = product_part_frame.find(delimiter)) != std::string::npos) {
             token = product_part_frame.substr(0, pos);
             count++;
             product_part_frame.erase(0, pos + 1);
-            if (count == 6){
+            if (count == indexNum){
                 break;
             }
         }
