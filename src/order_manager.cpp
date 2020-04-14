@@ -77,18 +77,19 @@ geometry_msgs::Pose AriacOrderManager::PickUp(std::string product_type, std::str
     }
     int bin_number = std::stoi(token,nullptr,0);
     auto part_pose = camera_.GetPartPose("/world", product_frame);
-    if(product_type == "pulley_part")
-        part_pose.position.z += 0.08;
-    double offset = part_pose.position.z*0.1;
+    
     bool failed_pick;
     geometry_msgs::Pose rackDrop;
     rackDrop.position.x = 0.3;
     rackDrop.position.y = 0.0;
-    rackDrop.position.z = 1;
+    rackDrop.position.z = 0.950;
     rackDrop.orientation.x = 0;
     rackDrop.orientation.y = 0;
     rackDrop.orientation.z = 0;
     rackDrop.orientation.z = 1;
+    if(product_type == "pulley_part")
+        part_pose.position.z += 0.08;
+        rackDrop.position.z = 1.2;
     if (agv_id ==1){
         
         if (bin_number<=2){
@@ -104,8 +105,10 @@ geometry_msgs::Pose AriacOrderManager::PickUp(std::string product_type, std::str
             bool drop = arm2_.DropPart(rackDrop,false);
             arm2_.SendRobotHome("bin");
             rackDrop.position.z = 0.955;
-            
-            double r=0, p=0, y=-1.0;
+            if (product_type == "pulley_part"){
+                rackDrop.position.z += 0.08;
+            }
+            double r=0, p=0, y=3.14;
             tf2::Quaternion q_rot, q_new, q_old;
             q_rot.setRPY(r,p,y);
             q_old[0] = part_pose.orientation.x;
@@ -135,7 +138,7 @@ geometry_msgs::Pose AriacOrderManager::PickUp(std::string product_type, std::str
     }
 
     else {
-        if (bin_number>=5){
+        if (bin_number>=4){
             bool failed_pick = arm1_.PickPart(part_pose);
             arm2_.SendRobotHome("arm2_exch");
             ROS_WARN_STREAM("Picking up state "<< failed_pick);
@@ -148,8 +151,10 @@ geometry_msgs::Pose AriacOrderManager::PickUp(std::string product_type, std::str
             bool drop = arm1_.DropPart(rackDrop,false);
             arm1_.SendRobotHome("bin");
             rackDrop.position.z = 0.955;
-           
-            double r=0, p=0, y=1.57;
+            if (product_type == "pulley_part"){
+                rackDrop.position.z += 0.08;
+            }
+            double r=0, p=0, y=-3.14;
             tf2::Quaternion q_rot, q_new, q_old;
             q_rot.setRPY(r,p,y);
             q_old[0] = part_pose.orientation.x;
@@ -225,7 +230,6 @@ std::string AriacOrderManager::PickAndPlace(const std::pair<std::string,geometry
         //ROS_INFO_STREAM("StampedPose_in " << StampedPose_in.pose.position.x);
         part_tf_listener_.transformPose("/world",StampedPose_in,StampedPose_out);
         StampedPose_out.pose.position.z += 0.1;
-        // StampedPose_out.pose.position.y -= 0.05;
         //ROS_INFO_STREAM("StampedPose_out " << StampedPose_out.pose.position.x);
         auto temp_frame = product_frame;
         temp_frame[15] = '9';
@@ -397,8 +401,8 @@ void AriacOrderManager::ClearTray(int agv_id){
                 failed_pick = arm1_.PickPart(part_pose);
             }
             part_pose.position.z += 0.3;
-            part_pose.position.x -= 0.1;
-            part_pose.position.y -= 0.8;
+            part_pose.position.x = 0.3;
+            part_pose.position.y = 2.7;
             bool result;
             result = arm1_.DropPart(part_pose, false);
             parts_list_kit_1_.pop_back();
@@ -421,8 +425,8 @@ void AriacOrderManager::ClearTray(int agv_id){
                 failed_pick = arm2_.PickPart(part_pose);
             }
             part_pose.position.z += 0.3;
-            part_pose.position.y += 0.8;
-            part_pose.position.x -= 0.1;
+            part_pose.position.y = 0.3;
+            part_pose.position.x = -2.7;
             bool result;
             result = arm2_.DropPart(part_pose, false);
             parts_list_kit_2_.pop_back();
@@ -600,15 +604,15 @@ bool AriacOrderManager::RemoveFailureParts(int sensor_num, std::string product_t
         bool result;
         if (sensor_num==1){
             part_pose.position.z += 0.3;
-            part_pose.position.x -= 0.1;
-            part_pose.position.y -= 0.8;
+            part_pose.position.x = 0.3;
+            part_pose.position.y = 2.7;
             result = arm1_.DropPart(part_pose, false);
 
         }
         else{
             part_pose.position.z += 0.3;
-            part_pose.position.x -= 0.1;
-            part_pose.position.y += 0.8;
+            part_pose.position.x = 0.3;
+            part_pose.position.y = -2.7;
             result = arm2_.DropPart(part_pose, false);
         }
 

@@ -53,7 +53,8 @@ robot_move_group_(robot_controller_options)
     "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"};
     home_joint_pose_kit1_ = {1.18, 1.51, -1.26, 1.88, 4.02, -1.51, 0};
     
-    home_joint_pose_kit2_ = {-1.18, 4.52, -1.13, 2.26, 3.6, -1.51, 0};
+    // home_joint_pose_kit2_ = {-1.18, 4.52, -1.13, 2.26, 3.6, -1.51, 0};
+    home_joint_pose_kit2_ = {-1.18, 4.52, -1.26, 1.88, 4.02, -1.51, 0};
 
 
     home_arm_1_pose_ = {1.18, 0, -1.51, 0, 2.89, -1.51, 0};
@@ -121,15 +122,15 @@ void RobotController::ChangeOrientation(geometry_msgs::Quaternion orientation_ta
     tf::Matrix3x3(Q).getRPY(roll,pitch,yaw_target);
     tf::quaternionMsgToTF(orientation_part, Q);
     tf::Matrix3x3(Q).getRPY(roll,pitch,yaw_part);
+    ROS_INFO_STREAM("Target yaw --> "<< yaw_target<<", part yaw -->"<< yaw_part);
     if (arm_id_=="arm1"){
-        yaw = (yaw_target - yaw_part);
-        ROS_INFO_STREAM(">>>>> Rotation :"<< yaw);
-
+        yaw = (yaw_part-1.6) - yaw_target;
     }
     else{
-        yaw = (yaw_target - yaw_part)+1.57;
+        // yaw = (yaw_target - yaw_part)+1.57;
+        yaw = yaw_target - (yaw_part - 1.57);
     }
-
+    ROS_INFO_STREAM(">>>>> Rotation :"<< yaw);
     ros::AsyncSpinner spinner(4);
     spinner.start();
     // while(!robot_move_group_.startStateMonitor()){
