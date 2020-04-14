@@ -17,7 +17,7 @@ orders:
     announcement_condition: time
     announcement_condition_value: 0.0
     shipment_count: 1
-    destinations: [ag2]
+    destinations: [agv2]
     products:
       product_0:
         type: order_part1
@@ -48,7 +48,7 @@ orders:
     announcement_condition: wanted_products
     announcement_condition_value: 4
     shipment_count: 1
-    destinations: [ag2]
+    destinations: [agv2]
     products:
       product_0:
         type: order_part1
