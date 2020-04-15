@@ -390,7 +390,7 @@ void AriacOrderManager::ClearTray(int agv_id){
             }
             part_pose.position.z += 0.3;
             part_pose.position.x = 0.3;
-            part_pose.position.y = 2.3;
+            part_pose.position.y = 2.5;
             bool result;
             result = arm1_.DropPart(part_pose);
             parts_list_kit_1_.pop_back();
@@ -413,7 +413,7 @@ void AriacOrderManager::ClearTray(int agv_id){
                 failed_pick = arm2_.PickPart(part_pose);
             }
             part_pose.position.z += 0.3;
-            part_pose.position.y = -2.3;
+            part_pose.position.y = -2.5;
             part_pose.position.x = 0.3;
             bool result;
             result = arm2_.DropPart(part_pose);
@@ -593,14 +593,14 @@ bool AriacOrderManager::RemoveFailureParts(int sensor_num, std::string product_t
         if (sensor_num==1){
             part_pose.position.z += 0.3;
             part_pose.position.x = 0.3;
-            part_pose.position.y = 2.3;
+            part_pose.position.y = 2.5;
             result = arm1_.DropPart(part_pose);
 
         }
         else{
             part_pose.position.z += 0.3;
             part_pose.position.x = 0.3;
-            part_pose.position.y = -2.3;
+            part_pose.position.y = -2.5;
             result = arm2_.DropPart(part_pose);
         }
 
