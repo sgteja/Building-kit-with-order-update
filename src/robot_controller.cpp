@@ -26,34 +26,16 @@ robot_move_group_(robot_controller_options)
     // robot_move_group_.setEndEffector("moveit_ee");
     robot_move_group_.allowReplanning(true);
 
-    //-- The order of joints positions is as follows
-    // ['linear_arm_actuator_joint',  'shoulder_pan_joint', 'shoulder_lift_joint', 
-    // 'elbow_joint', 'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
-
-    //--These are joint positions used for the home position to pick from bin
-    // if (arm_id == "arm1"){
-    //     home_joint_pose_bin_ = {0.0, 3.14, -1.26, 2.39, 3.52, 4.7, 0};
-    // }
-    // else {
-
-    //     home_joint_pose_bin_ = {0.0, 3.14, -1.26, 2.51, 3.40, -1.60, 0};
-    // }
     home_joint_pose_bin_ = {0.0, 3.14, -1.26, 2.51, 3.40, -1.60, 0};
 
     //-- The joint positions for the home position to pick from the conveyer belt
     home_joint_pose_conv_ = {0.0, 3.1, -1.1, 1.9, 3.9, 4.7, 0};
-    // if (arm_id == "arm1"){
-    //     home_joint_pose_conv_ = {0.0, 3.1, -1.1, 1.9, 3.9, 4.7, 0};   
-    // }
-    // else {
-    //     home_joint_pose_conv_ = {0, 3.27, -2.38, -1.76, -0.57, -4.70, 0};
-    // }
+    
 
     joint_names_ = {"linear_arm_actuator_joint",  "shoulder_pan_joint", "shoulder_lift_joint", 
     "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"};
     home_joint_pose_kit1_ = {1.18, 1.51, -1.26, 1.88, 4.02, -1.51, 0};
     
-    // home_joint_pose_kit2_ = {-1.18, 4.52, -1.13, 2.26, 3.6, -1.51, 0};
     home_joint_pose_kit2_ = {-1.18, 4.52, -1.26, 1.88, 4.02, -1.51, 0};
 
 
@@ -127,19 +109,12 @@ void RobotController::ChangeOrientation(geometry_msgs::Quaternion orientation_ta
         yaw = (yaw_part-1.6) - yaw_target;
     }
     else{
-        // yaw = (yaw_target - yaw_part)+1.57;
         yaw = yaw_target - (yaw_part - 1.57);
     }
     ROS_INFO_STREAM(">>>>> Rotation :"<< yaw);
     ros::AsyncSpinner spinner(4);
     spinner.start();
-    // while(!robot_move_group_.startStateMonitor()){
-    //     ROS_INFO_STREAM("Waiting for current robot state");
-    //     ros::spinOnce();        
-    // }
-    // std::vector<double> joint_values = robot_move_group_.getCurrentJointValues();
-    // ROS_INFO_STREAM("Received joint values--->"<<joint_values[0]);
-    // joint_values[6] = yaw;
+    
     ROS_INFO_STREAM("Adjusting the orientation");
     robot_move_group_.setJointValueTarget("wrist_3_joint",yaw);
     if (this->Planner()) {
@@ -273,7 +248,6 @@ void RobotController::SendRobotHome(std::string pose) {
     }
 
     spinner.stop();
-    // ros::Duration(2.0).sleep();
 
     robot_tf_listener_.waitForTransform(""+arm_id_+"_linear_arm_actuator", ""+arm_id_+"_ee_link",
                                             ros::Time(0), ros::Duration(10));
@@ -303,7 +277,7 @@ void RobotController::GripperToggle(const bool& state) {
     }
 }
 
-bool RobotController::DropPart(geometry_msgs::Pose part_pose, bool change_orient, geometry_msgs::Pose pick_pose) {
+bool RobotController::DropPart(geometry_msgs::Pose part_pose, geometry_msgs::Pose pick_pose) {
 
     drop_flag_ = true;
 
@@ -312,11 +286,8 @@ bool RobotController::DropPart(geometry_msgs::Pose part_pose, bool change_orient
 
     if (gripper_state_){
         ROS_INFO_STREAM("Moving towards AGV"+arm_id_+"...");
-        if (change_orient){
-            ChangeOrientation(part_pose.orientation, pick_pose.orientation);
-       }
+        ChangeOrientation(part_pose.orientation, pick_pose.orientation);
         auto temp_pose = part_pose;
-        // temp_pose.position.z += 0.5;
         temp_pose.position.z += 0.1;
         this->GoToTarget({temp_pose, part_pose});
         ros::Duration(2).sleep();
@@ -332,7 +303,7 @@ bool RobotController::DropPart(geometry_msgs::Pose part_pose, bool change_orient
     return gripper_state_;
 }
 
-bool RobotController::DropPart(geometry_msgs::Pose part_pose, bool change_orient) {
+bool RobotController::DropPart(geometry_msgs::Pose part_pose) {
 
     drop_flag_ = true;
 
@@ -343,7 +314,6 @@ bool RobotController::DropPart(geometry_msgs::Pose part_pose, bool change_orient
         ROS_INFO_STREAM("Moving towards AGV1...");
 
        auto temp_pose = part_pose;
-       // temp_pose.position.z += 0.5;
        temp_pose.position.z += 0.1;
        this->GoToTarget({temp_pose, part_pose});
        ros::Duration(2).sleep();
@@ -370,7 +340,6 @@ bool RobotController::PickPart(geometry_msgs::Pose& part_pose) {
     ROS_INFO_STREAM("Moving to part...");
     part_pose.position.z = part_pose.position.z + offset_;
     auto temp_pose_1 = part_pose;
-    // temp_pose_1.position.z += 0.3;
     temp_pose_1.position.z += 0.15;
 
 

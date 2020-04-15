@@ -9,7 +9,6 @@
 
 
 
-// AriacOrderManager::AriacOrderManager(): arm1_{"arm1"}, arm2_{"arm2"}
 AriacOrderManager::AriacOrderManager(): arm1_{"arm1"}, arm2_{"arm2"}
 {
     order_subscriber_ = order_manager_nh_.subscribe(
@@ -102,7 +101,7 @@ geometry_msgs::Pose AriacOrderManager::PickUp(std::string product_type, std::str
                 failed_pick = arm2_.PickPart(part_pose);
             }
             arm2_.SendRobotHome("arm2_exch");
-            bool drop = arm2_.DropPart(rackDrop,false);
+            bool drop = arm2_.DropPart(rackDrop);
             arm2_.SendRobotHome("bin");
             rackDrop.position.z = 0.955;
             if (product_type == "pulley_part"){
@@ -148,13 +147,13 @@ geometry_msgs::Pose AriacOrderManager::PickUp(std::string product_type, std::str
                 failed_pick = arm1_.PickPart(part_pose);
             }
             arm1_.SendRobotHome("arm1_exch");
-            bool drop = arm1_.DropPart(rackDrop,false);
+            bool drop = arm1_.DropPart(rackDrop);
             arm1_.SendRobotHome("bin");
             rackDrop.position.z = 0.955;
             if (product_type == "pulley_part"){
                 rackDrop.position.z += 0.08;
             }
-            double r=0, p=0, y=-3.14;
+            double r=0, p=0, y=1.57;
             tf2::Quaternion q_rot, q_new, q_old;
             q_rot.setRPY(r,p,y);
             q_old[0] = part_pose.orientation.x;
@@ -201,8 +200,6 @@ std::string AriacOrderManager::PickAndPlace(const std::pair<std::string,geometry
 
     part_pose = this->PickUp(product_type, product_frame, agv_id);
     
-
-    
     //--get the pose of the object in the tray from the order
     geometry_msgs::Pose drop_pose = product_type_pose.second;
 
@@ -215,7 +212,6 @@ std::string AriacOrderManager::PickAndPlace(const std::pair<std::string,geometry
         ROS_INFO_STREAM("StampedPose_int (" << StampedPose_in.pose.position.x <<","<< StampedPose_in.pose.position.y << "," << StampedPose_in.pose.position.z<<")");
         part_tf_listener_.transformPose("/world",StampedPose_in,StampedPose_out);
         StampedPose_out.pose.position.z += 0.1;
-        // StampedPose_out.pose.position.y += 0.05;
         ROS_INFO_STREAM("StampedPose_out (" << StampedPose_out.pose.position.x <<","<< StampedPose_out.pose.position.y << "," << StampedPose_out.pose.position.z<<")");
         ROS_INFO_STREAM("StampedPose_out (" << StampedPose_out.pose.orientation.x <<","<< StampedPose_out.pose.orientation.y 
                         << "," << StampedPose_out.pose.orientation.z<< "," << StampedPose_out.pose.orientation.w<<")");
@@ -227,25 +223,24 @@ std::string AriacOrderManager::PickAndPlace(const std::pair<std::string,geometry
         arm2_.SendRobotHome("kit2");
         StampedPose_in.header.frame_id = "/kit_tray_2";
         StampedPose_in.pose = drop_pose;
-        //ROS_INFO_STREAM("StampedPose_in " << StampedPose_in.pose.position.x);
+        ROS_INFO_STREAM("StampedPose_int (" << StampedPose_in.pose.position.x <<","<< StampedPose_in.pose.position.y << "," << StampedPose_in.pose.position.z<<")");
         part_tf_listener_.transformPose("/world",StampedPose_in,StampedPose_out);
         StampedPose_out.pose.position.z += 0.1;
-        //ROS_INFO_STREAM("StampedPose_out " << StampedPose_out.pose.position.x);
+        ROS_INFO_STREAM("StampedPose_out (" << StampedPose_out.pose.position.x <<","<< StampedPose_out.pose.position.y << "," << StampedPose_out.pose.position.z<<")");
+        ROS_INFO_STREAM("StampedPose_out (" << StampedPose_out.pose.orientation.x <<","<< StampedPose_out.pose.orientation.y 
+                        << "," << StampedPose_out.pose.orientation.z<< "," << StampedPose_out.pose.orientation.w<<")");
         auto temp_frame = product_frame;
         temp_frame[15] = '9';
         parts_list_kit_2_.push_back(temp_frame);
     }
  
     if (agv_id==1){
-        auto result = arm1_.DropPart(StampedPose_out.pose, true, part_pose);
+        auto result = arm1_.DropPart(StampedPose_out.pose, part_pose);
     }
     else{
-        auto result = arm2_.DropPart(StampedPose_out.pose, true, part_pose);
+        auto result = arm2_.DropPart(StampedPose_out.pose, part_pose);
     }
-    // ros::Duration(10.0).sleep();
 
-
-    // return result;
     return product_frame;
 }
 
@@ -331,33 +326,26 @@ bool AriacOrderManager::PickAndPlaceFromConv(const std::pair<std::string,geometr
         ROS_INFO_STREAM("StampedPose_int (" << StampedPose_in.pose.position.x <<","<< StampedPose_in.pose.position.y << "," << StampedPose_in.pose.position.z<<")");
         part_tf_listener_.transformPose("/world",StampedPose_in,StampedPose_out);
         StampedPose_out.pose.position.z += 0.1;
-        StampedPose_out.pose.position.y -= 0.1;
         ROS_INFO_STREAM("StampedPose_out (" << StampedPose_out.pose.position.x <<","<< StampedPose_out.pose.position.y << "," << StampedPose_out.pose.position.z<<")");
 
     }
     else{
         StampedPose_in.header.frame_id = "/kit_tray_2";
         StampedPose_in.pose = drop_pose;
-        //ROS_INFO_STREAM("StampedPose_in " << StampedPose_in.pose.position.x);
+        ROS_INFO_STREAM("StampedPose_int (" << StampedPose_in.pose.position.x <<","<< StampedPose_in.pose.position.y << "," << StampedPose_in.pose.position.z<<")");
         part_tf_listener_.transformPose("/world",StampedPose_in,StampedPose_out);
         StampedPose_out.pose.position.z += 0.1;
-        StampedPose_out.pose.position.y += 0.1;
-        //ROS_INFO_STREAM("StampedPose_out " << StampedPose_out.pose.position.x);
+        ROS_INFO_STREAM("StampedPose_out (" << StampedPose_out.pose.position.x <<","<< StampedPose_out.pose.position.y << "," << StampedPose_out.pose.position.z<<")");
     }
-    // ros::Duration(5.0).sleep();
-    // ros::spinOnce();
     bool result;
     if (agv_id==1){
         arm1_.ChangeOrientation(StampedPose_out.pose.orientation, part_pose.orientation);
-        result = arm1_.DropPart(StampedPose_out.pose,false);
+        result = arm1_.DropPart(StampedPose_out.pose);
     }
     else {
         arm2_.ChangeOrientation(StampedPose_out.pose.orientation, part_pose.orientation);
-        result = arm2_.DropPart(StampedPose_out.pose,false);
+        result = arm2_.DropPart(StampedPose_out.pose);
     }   
-    // ros::Duration(10.0).sleep();
-
-    // arm1_.SendRobotHome(0);
 
     return result;
 }
@@ -402,9 +390,9 @@ void AriacOrderManager::ClearTray(int agv_id){
             }
             part_pose.position.z += 0.3;
             part_pose.position.x = 0.3;
-            part_pose.position.y = 2.7;
+            part_pose.position.y = 2.3;
             bool result;
-            result = arm1_.DropPart(part_pose, false);
+            result = arm1_.DropPart(part_pose);
             parts_list_kit_1_.pop_back();
         }
     }
@@ -425,10 +413,10 @@ void AriacOrderManager::ClearTray(int agv_id){
                 failed_pick = arm2_.PickPart(part_pose);
             }
             part_pose.position.z += 0.3;
-            part_pose.position.y = 0.3;
-            part_pose.position.x = -2.7;
+            part_pose.position.y = -2.3;
+            part_pose.position.x = 0.3;
             bool result;
-            result = arm2_.DropPart(part_pose, false);
+            result = arm2_.DropPart(part_pose);
             parts_list_kit_2_.pop_back();
         }
     }
@@ -443,11 +431,11 @@ void AriacOrderManager::ExecuteOrder() {
     std::list<std::pair<std::string,geometry_msgs::Pose>> failed_parts;
 
     ros::spinOnce();
-    ros::Duration(1.0).sleep();
+    ros::Duration(2.0).sleep();
     product_frame_list_ = camera_.get_product_frame_list();
     int current_order_count = 0;
     // Reading the order
-    // for (const auto &order:received_orders_){
+    
     while(received_orders_.size()!=current_order_count){
         auto order = received_orders_[current_order_count];
         auto order_id = order.order_id;
@@ -605,15 +593,15 @@ bool AriacOrderManager::RemoveFailureParts(int sensor_num, std::string product_t
         if (sensor_num==1){
             part_pose.position.z += 0.3;
             part_pose.position.x = 0.3;
-            part_pose.position.y = 2.7;
-            result = arm1_.DropPart(part_pose, false);
+            part_pose.position.y = 2.3;
+            result = arm1_.DropPart(part_pose);
 
         }
         else{
             part_pose.position.z += 0.3;
             part_pose.position.x = 0.3;
-            part_pose.position.y = -2.7;
-            result = arm2_.DropPart(part_pose, false);
+            part_pose.position.y = -2.3;
+            result = arm2_.DropPart(part_pose);
         }
 
 

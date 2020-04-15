@@ -30,8 +30,8 @@ public:
     void GoToTarget(const geometry_msgs::Pose& pose);
     void SendRobotHome(std::string pose);
     void SendRobotExch(std::string arm, double buffer);
-    bool DropPart(geometry_msgs::Pose pose, bool change_orient);
-    bool DropPart(geometry_msgs::Pose pose, bool change_orient, geometry_msgs::Pose part_pose);
+    bool DropPart(geometry_msgs::Pose pose);
+    bool DropPart(geometry_msgs::Pose pose, geometry_msgs::Pose part_pose);
     void GripperToggle(const bool& state);
     void GripperCallback(const osrf_gear::VacuumGripperState::ConstPtr& grip);
     void GripperStateCheck(geometry_msgs::Pose pose);

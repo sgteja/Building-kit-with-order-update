@@ -72,14 +72,9 @@ int main(int argc, char **argv) {
 
 
     StartCompetition(node);    
-    ros::Duration(2.0).sleep();
-    //manager.SetScannedProducts();
-    manager.ExecuteOrder();
-
-    // ros::spin();  // This executes callbacks on new data until ctrl-c.
-
-    //manager.ExecuteOrder();
     ros::Duration(4.0).sleep();
+    manager.ExecuteOrder();
+    ros::Duration(2.0).sleep();
     EndCompetition(node);
 
     ROS_WARN_STREAM("Killing the node....");
