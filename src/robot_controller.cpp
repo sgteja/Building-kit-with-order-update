@@ -34,9 +34,11 @@ robot_move_group_(robot_controller_options)
 
     joint_names_ = {"linear_arm_actuator_joint",  "shoulder_pan_joint", "shoulder_lift_joint", 
     "elbow_joint", "wrist_1_joint", "wrist_2_joint", "wrist_3_joint"};
-    home_joint_pose_kit1_ = {1.18, 1.51, -1.26, 1.88, 4.02, -1.51, 0};
+    // home_joint_pose_kit1_ = {1.18, 1.51, -1.26, 1.88, 4.02, -1.51, 0};
+    home_joint_pose_kit1_ = {1.18, 1.51, -1.00, 2.01, 3.66, -1.51, 0};
     
-    home_joint_pose_kit2_ = {-1.18, 4.52, -1.26, 1.88, 4.02, -1.51, 0};
+    // home_joint_pose_kit2_ = {-1.18, 4.52, -1.26, 1.88, 4.02, -1.51, 0};
+    home_joint_pose_kit2_ = {-1.18, 4.52, -1.00, 2.01, 3.66, -1.51, 0};
 
 
     home_arm_1_pose_ = {1.18, 0, -1.51, 0, 2.89, -1.51, 0};

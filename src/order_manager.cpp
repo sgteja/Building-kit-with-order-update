@@ -430,6 +430,7 @@ void AriacOrderManager::ExecuteOrder() {
     bool pick_n_place_success{false};
     std::list<std::pair<std::string,geometry_msgs::Pose>> failed_parts;
 
+    ros::Duration(2.0).sleep();
     ros::spinOnce();
     ros::Duration(2.0).sleep();
     product_frame_list_ = camera_.get_product_frame_list();
